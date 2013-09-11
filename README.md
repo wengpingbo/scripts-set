@@ -8,3 +8,5 @@ copy.sh:
 rename.sh:
 
 flood_ping.sh: a script can fork many process to send icmp packet
+
+dfunc.sh: disassemble specified function in a shared library
