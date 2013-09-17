@@ -1,8 +1,10 @@
 #!/bin/sh
 
+dir=1
+
 if [ ! -d $1 ];then
-	echo "please specify the ramdisk directory..."
-	exit 1
+	dir=0
+	echo "assuming the input file is gziped cpio image..."
 fi
 
 LOAD_ADDR="0x40800000"
@@ -10,21 +12,25 @@ ENTRY_ADDR="0x40800000"
 
 outdir=`pwd`
 
-cd $1 || exit 1
-
-tmp=`tempfile -p ramfs`
-
-find . | cpio -o -H newc | gzip -9 > "$tmp"
+if [ "$dir" -eq 0 ];then
+	tmp="$1"
+else
+	tmp=`tempfile -p ramfs`
+	cd $1
+	find . | cpio -o -H newc | gzip -9 > "$tmp"
+	cd "$outdir"
+fi
 
 rm -f "$outdir"/ramdisk-uboot.img
 
 mkimage -A arm -O linux -T ramdisk -C none -a "$LOAD_ADDR" -e "$ENTRY_ADDR" -n ramdisk -d "$tmp" "$outdir"/ramdisk-uboot.img
 
-if [ $? -eq 0 ];then
-	echo "generated ramdisk-uboot.img..."
+ret=$?
+
+if [ "$dir" -eq 1 ];then
 	rm -f $tmp
-else
-	echo "ramdisk generated failed..."
-	rm -f $tmp
+fi
+
+if [ "$ret" -ne 0 ];then
 	exit 1
 fi
